@@ -1,16 +1,15 @@
 const express = require('express');
 const app = express();
-
 const axios = require("axios");
-
+const fetchactu = require("./fetchactu.js");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom
 
-require('dotenv').config()
+require('dotenv').config();
 
 const dom = new JSDOM(`<!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,12 +18,13 @@ const dom = new JSDOM(`<!DOCTYPE html>
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" type="text/css" href="css/styles.css">
     <title>Informations</title>
-</head>
-<body>
-
-    <div class="vacation-cards"></div>
-    
-</body>
+  </head>
+  <body>
+    <div class="vacation-cards">
+      <section class="cards">
+      </section>
+    </div>   
+  </body>
 </html>
 `);
 
@@ -32,90 +32,42 @@ const $ = require("jquery")(dom.window);
 
 app.use(express.static('public'))
 
-// site.com/controler/method/parametres
-// app.get('/hello/:name', (req, res) => {
-//     console.log(req.params)
-//     res.send(`hello ${req.params.name}`);
-//   });
+const getNews = async () => {
+  let actus = await fetchactu({ lang: "en", number: 12 })
+  // let tweets = await fetchtweet
+  // let golinks = await getchgo...
 
-  app.get('/', (req, res) => {
-    
-    res.send(dom.serialize())
+  return [...actus /*, ...golinks, ...tweets*/]
+}
 
-    let titles = []
-    let subtitles = []
-    let thumbnails = []
-    let visual_desc = []
-    let news_urls = []
-    
-    let url = "https://actu.epfl.ch/api/v1/channels/1/news/?lang=en"
-    axios({
-      method:'get',
-      url,
-      })
-      .then(function (response) {
+const createArticleList = (articles) => {
+  articlesList = ''
+  for (article of articles) {
+    // console.debug(article.title || '');
+    if (!article) { break; }
+    articlesList += `
+      <article class="card">
+        <a href="${article.url || ''}" target="_blank">
+        <picture class="thumbnail">
+            <img src="${article.image || ''}" alt="${article.visual || ''}">
+        </picture>
+        <div class="card-content">
+            <h2>${article.title || ''}</h2>
+            <p>${article.subtitle || ''}</p>
+        </div>
+        </a>
+      </article>;`
+  }
+  return articlesList;
+}
 
-          for (let i = 0; i != 3; i++) {
-            
-            titles.push(response.data.results[i].title)
-            subtitles.push(response.data.results[i].subtitle)
-            thumbnails.push(response.data.results[i].thumbnail_url)
-            visual_desc.push(response.data.results[i].visual_description)
-            news_urls.push(response.data.results[i].news_url)
-
-          }
-
-          $(".vacation-cards").html(`
-            <section class="cards">
-                 
-                  <article class="card">
-                        <a href="${news_urls[0]}" target="_blank">
-                        <picture class="thumbnail">
-                            <img src="${thumbnails[0]}" alt="${visual_desc[0]}">
-                        </picture>
-                        <div class="card-content">
-                            <h2>${titles[0]}</h2>
-                            <p>${subtitles[0]}</p>
-                        </div>
-                    </a>
-                  </article>
-                  <article class="card">
-                        <a href="${news_urls[1]}" target="_blank">
-                        <picture class="thumbnail">
-                            <img src="${thumbnails[1]}" alt="${visual_desc[1]}">
-                        </picture>
-                        <div class="card-content">
-                            <h2>${titles[1]}</h2>
-                            <p>${subtitles[1]}</p>
-                        </div>
-                    </a>
-                  </article>
-                  <article class="card">
-                        <a href="${news_urls[2]}" target="_blank">
-                        <picture class="thumbnail">
-                            <img src="${thumbnails[2]}" alt="${visual_desc[2]}">
-                        </picture>
-                        <div class="card-content">
-                            <h2>${titles[2]}</h2>
-                            <p>${subtitles[2]}</p>
-                        </div>
-                    </a>
-                  </article>
- 
-                  
- 
-    </section>
-    `)
-
-      })
-      .catch(function (error) {
-          console.log(error);
-      });
-
-
-
-  })
+app.get('/', async (req, res) => {
+  let articles = await getNews()
+  let articlesList = createArticleList(articles)
+  res.send(dom.serialize())
+  $(".cards").html(articlesList)
+})
 
 const server = app.listen(3000, () => {
-    console.log(`Express running → PORT ${server.address().port}`);
-  });
+  console.log(`Express running → PORT ${server.address().port}`);
+});
