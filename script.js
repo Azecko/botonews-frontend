@@ -3,6 +3,7 @@ const app = express();
 const axios = require("axios");
 const fetchactu = require("./fetchactu.js");
 const jsdom = require("jsdom");
+const fetchgo = require('./fetchgo.js');
 const { JSDOM } = jsdom
 
 require('dotenv').config();
@@ -33,11 +34,11 @@ const $ = require("jquery")(dom.window);
 app.use(express.static('public'))
 
 const getNews = async () => {
-  let actus = await fetchactu({ lang: "en", number: 12 })
+  let actus = await fetchactu({ lang: "en", number: 4 })
   // let tweets = await fetchtweet
-  // let golinks = await getchgo...
+  let golinks = await fetchgo({number : 4})
 
-  return [...actus /*, ...golinks, ...tweets*/]
+  return [...actus, ...golinks, /*...tweets*/]
 }
 
 const createArticleList = (articles) => {
