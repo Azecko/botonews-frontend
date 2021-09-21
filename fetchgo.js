@@ -9,20 +9,20 @@ module.exports = async function fetchactu(options) {
     let opt = {...defaultoptions, ...options}
     
     // 1. get data with fetch on go's feed
-    const response = await fetch('https://go.epfl.ch/feed');
-    const body = await response.text();
+    const response = await fetch('https://go.epfl.ch/api/v1/aliases?orderby=created_at&sort=desc&per_page=10');
+    const body = await response.json();
 
     // 2. process data with xml2js
-    var jsonObj = parser.parse(body)
+    // var jsonObj = parser.parse(body)
 
     let data  = []
     for (let i = 0; i != opt.number; i++) {
         let article = {
-            title: jsonObj.feed.entry[i].title,
-            subtitle: jsonObj.feed.entry[i].summary.split('<hr />')[0],
-            url: jsonObj.feed.entry[i].link,
+            title: `https://go.epfl.ch/${body.data[i].alias}`,
+            subtitle: `<a href="https://go.epfl.ch/${body.data[i].alias}" target="_blank"><b>https://go.epfl.ch/${body.data[i].alias}</b></a> previously was <a href="${body.data[i].url}" target="_blank"><b>${body.data[i].url}</b></a>.<br>It has <b>${body.data[i].clicks}</b> clicks.<br>Created at <b>${body.data[i].created_at}</b>`,
+            url: body.data[i].url,
             image: `https://go.epfl.ch/logo/GoEPFL_large_red_white.jpg`,
-            // visual: body.results[i].visual_description,
+            visual: `Red go EPFL logo`
         }
         data.push(article)
     }
