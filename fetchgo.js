@@ -19,10 +19,11 @@ module.exports = async function fetchactu(options) {
     for (let i = 0; i != opt.number; i++) {
         let article = {
             title: `https://go.epfl.ch/${body.data[i].alias}`,
-            subtitle: `<a href="https://go.epfl.ch/${body.data[i].alias}" target="_blank"><b>https://go.epfl.ch/${body.data[i].alias}</b></a> previously was <a href="${body.data[i].url}" target="_blank"><b>${body.data[i].url}</b></a>.<br>It has <b>${body.data[i].clicks}</b> clicks.<br>Created at <b>${body.data[i].created_at}</b>`,
+            subtitle: `<a href="https://go.epfl.ch/${body.data[i].alias}" target="_blank"><b>https://go.epfl.ch/${body.data[i].alias}</b></a> previously was <a href="${body.data[i].url}" target="_blank"><b>${body.data[i].url}</b></a>.<br>It has <b>${body.data[i].clicks}</b> clicks.`,
             url: body.data[i].url,
             image: `https://go.epfl.ch/logo/GoEPFL_large_red_white.jpg`,
-            visual: `Red go EPFL logo`
+            visual: `Red go EPFL logo`,
+            created_at: body.data[i].created_at
         }
         data.push(article)
     }

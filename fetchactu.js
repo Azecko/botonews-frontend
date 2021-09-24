@@ -19,6 +19,7 @@ module.exports = async function fetchactu(options) {
             url: body.results[i].news_url,
             image: body.results[i].thumbnail_url,
             visual: body.results[i].visual_description,
+            created_at: body.results[i].publish_date
         }
         data.push(article)
     }
