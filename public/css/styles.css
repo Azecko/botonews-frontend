@@ -11,7 +11,7 @@ body {
  }
   
  .card {
-     flex: 0 1 24%;
+     /* flex: 0 1 24%; */
      border-radius: 25px;
  }
 
@@ -37,7 +37,6 @@ p {
 
 .card {
 	background: rgb(255, 255, 255);
-	margin-bottom: 2em;	
 }
 
 .card a {
@@ -50,12 +49,11 @@ p {
 }
 
 .card-content {
-	padding: 1.4em;
+	/* padding: 1.4em; */
 }
 
 .card-content h2 {
 	margin-top: 0;
-	margin-bottom: .5em;
 	font-weight: bold;
 }
 

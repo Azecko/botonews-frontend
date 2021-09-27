@@ -5,6 +5,8 @@ const fetchactu = require("./fetchactu.js");
 const jsdom = require("jsdom");
 const fetchgo = require('./fetchgo.js');
 const fetchhacker = require('./fetchhacker.js');
+const fetchtweets = require('./fetchtweets.js');
+const { debug } = require('request');
 const { JSDOM } = jsdom
 
 require('dotenv').config();
@@ -22,13 +24,22 @@ const dom = new JSDOM(`<!DOCTYPE html>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous" async></script>
     <title>Botonews</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
   </head>
   <body>
+    <button class="random-button">Randomize</button>
     <div class="vacation-cards">
       <section class="cards">
         <div class="row card-columns"></div>
       </section>
-    </div>   
+    </div>
+
+    <script>
+      $(".random-button").click(function(){
+        console.log("Button clicked)
+      });
+    </script>
   </body>
 </html>
 `);
@@ -39,37 +50,24 @@ app.use(express.static('public'))
 
 const getNews = async () => {
   let actus = await fetchactu({ lang: "en", number: 4 })
-  // let tweets = await fetchtweet
   let golinks = await fetchgo({number : 4})
   let hackernews = await fetchhacker({number: 4})
 
-  return [...actus, ...golinks, ...hackernews /*...tweets*/]
+  let tweetsceo = await fetchtweets({username: "php_ceo", userid: "2317524115", number: 4})
+  let tweetshipster = await fetchtweets({username: "hipsterhacker", userid: "261546340", number: 4})
+  let tweetsneckbeard = await fetchtweets({username: "neckbeardhacker", userid: "278523798", number: 4})
+
+  //return [ ...tweetsneckbeard]
+  return [...actus, ...golinks, ...hackernews, ...tweetsneckbeard, ...tweetshipster, ...tweetsceo]
 }
 
-const createArticleList = (articles) => {
+const createArticleList = async (articles) => {
   articlesList = ''
   for (article of articles) {
     // console.debug(article.title || '');
     if (!article) { break; }
-    // articlesList += `
-    //   <article class="card">
-    //     <a href="${article.url || ''}" target="_blank">
-    //     <picture class="thumbnail">
-    //         <img src="${article.image || ''}" alt="${article.visual || ''}">
-    //     </picture>
-    //     <div class="card-content">
-    //         <h2>${article.title || ''}</h2>
-    //         <p>${article.subtitle || ''}</p>
-    //     </div>
-    //     </a>
-    //   </article>`
 
     var date = new Date(article.created_at)
-    var options = {   
-      day: 'numeric',
-      month: 'long', 
-      year: 'numeric',
-    };
 
     articlesList += `
     <div class="col-lg-3">
@@ -87,16 +85,28 @@ const createArticleList = (articles) => {
     </div>
   </div>
     `
-
   }
   return articlesList;
 }
 
-app.get('/', async (req, res) => {
+const getArticles = async (random=false) => {
   let articles = await getNews()
-  let articlesList = createArticleList(articles)
-  res.send(dom.serialize())
+  if(random) {
+    articles.sort( () => .5 - Math.random() );
+  }
+  return await createArticleList(articles)
+}
+
+app.get('/', async (req, res) => {
+  let articlesList = await getArticles()
   $(".row").html(articlesList)
+  res.send(dom.serialize())
+})
+
+app.get('/random', async (req, res) => {
+    let articles = await getArticles(true)
+    $(".row").html(articles)
+    res.send(dom.serialize())
 })
 
 const server = app.listen(3000, () => {
