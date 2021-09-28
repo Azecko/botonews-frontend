@@ -23,12 +23,14 @@ const dom = new JSDOM(`<!DOCTYPE html>
     <link rel="stylesheet" type="text/css" href="css/styles.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous" async></script>
-    <title>Botonews</title>
-
     <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+    <title>Botonews</title>
   </head>
   <body>
     <button class="random-button">Randomize</button>
+    <div class="form-check form-switch">
+    <input class="form-check-input" id="go" type="checkbox" />go.epfl.ch
+    </div>
     <div class="vacation-cards">
       <section class="cards">
         <div class="row card-columns"></div>
@@ -36,9 +38,22 @@ const dom = new JSDOM(`<!DOCTYPE html>
     </div>
 
     <script>
+    $( document ).ready(function() {
+
+      var URLwithParams = new URLSearchParams(window.location.search);
+      let allChannels = URLwithParams.get('channels');
+      let channels = allChannels.split(',')
+      if (channels.includes('go')) {
+        $('#go')[0].checked = true;
+      }
+
       $(".random-button").click(function(){
-        console.log("Button clicked)
+        location.href = "http://localhost:3000/random?channels=" + allChannels;
+
+        var gostatus = $('#go').is(':checked');
       });
+
+    });
     </script>
   </body>
 </html>
@@ -48,18 +63,52 @@ const $ = require("jquery")(dom.window);
 
 app.use(express.static('public'))
 
-const getNews = async () => {
-  let actus = await fetchactu({ lang: "en", number: 4 })
-  let golinks = await fetchgo({number : 4})
-  let hackernews = await fetchhacker({number: 4})
+const getNews = async (channels=[], count=4) => {
 
-  let tweetsceo = await fetchtweets({username: "php_ceo", userid: "2317524115", number: 4})
-  let tweetshipster = await fetchtweets({username: "hipsterhacker", userid: "261546340", number: 4})
-  let tweetsneckbeard = await fetchtweets({username: "neckbeardhacker", userid: "278523798", number: 4})
+  if (!channels.length) {
+    let actus = await fetchactu({ lang: "en", number: count })
+    let golinks = await fetchgo({number: count})
+    let hackernews = await fetchhacker({number: count})
+  
+    let tweetsceo = await fetchtweets({username: "php_ceo", userid: "2317524115", number: count})
+    let tweetshipster = await fetchtweets({username: "hipsterhacker", userid: "261546340", number: count})
+    let tweetsneckbeard = await fetchtweets({username: "neckbeardhacker", userid: "278523798", number: count})
+    return [...actus, ...golinks, ...hackernews, ...tweetsneckbeard, ...tweetshipster, ...tweetsceo]
+  }
+
+  let data = []
+
+  if(channels.includes('actu')) {
+    let actus = await fetchactu({ lang: "en", number: count })
+    data = data.concat(actus)
+  }
+  if(channels.includes('go')) {
+    let golinks = await fetchgo({number: count})
+    data = data.concat(golinks)
+  }
+  if(channels.includes('hn')) {
+    let hnlinks = await fetchhacker({number: count})
+    data = data.concat(hnlinks)
+  }
+  if(channels.includes('php_ceo')) {
+    let tweetsceo = await fetchtweets({username: "php_ceo", userid: "2317524115", number: count})
+    data = data.concat(tweetsceo)
+  }
+  if(channels.includes('hipsterhacker')) {
+    let tweetshipster = await fetchtweets({username: "hipsterhacker", userid: "261546340", number: count})
+    data = data.concat(tweetshipster)
+  }
+  if(channels.includes('neckbeardhacker')) {
+    let tweetsneckbeard = await fetchtweets({username: "neckbeardhacker", userid: "278523798", number: count})
+    data = data.concat(tweetsneckbeard)
+  }
+
+  return data
+  }
+
+
 
   //return [ ...tweetsneckbeard]
-  return [...actus, ...golinks, ...hackernews, ...tweetsneckbeard, ...tweetshipster, ...tweetsceo]
-}
 
 const createArticleList = async (articles) => {
   articlesList = ''
@@ -89,8 +138,8 @@ const createArticleList = async (articles) => {
   return articlesList;
 }
 
-const getArticles = async (random=false) => {
-  let articles = await getNews()
+const getArticles = async (random=false, channels=[], count) => {
+  let articles = await getNews(channels, count)
   if(random) {
     articles.sort( () => .5 - Math.random() );
   }
@@ -98,13 +147,17 @@ const getArticles = async (random=false) => {
 }
 
 app.get('/', async (req, res) => {
-  let articlesList = await getArticles()
+  const channels = req.query.channels.split(',')
+  const count = req.query.count
+  let articlesList = await getArticles(false, channels, count)
   $(".row").html(articlesList)
   res.send(dom.serialize())
 })
 
 app.get('/random', async (req, res) => {
-    let articles = await getArticles(true)
+    const channels = req.query.channels.split(',')
+    const count = req.query.count
+    let articles = await getArticles(true, channels, count)
     $(".row").html(articles)
     res.send(dom.serialize())
 })
